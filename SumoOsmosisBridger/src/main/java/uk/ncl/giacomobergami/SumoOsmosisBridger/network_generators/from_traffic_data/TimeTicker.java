@@ -86,7 +86,7 @@ public class TimeTicker {
             return new ImmutablePair<>(traffic_simulation_ticks.get(ls.get(0)).getLeft(), traffic_simulation_ticks.get(ls.get(ls.size()-1)).getRight());
     }
 
-    public static List<MutablePair<Double, Double>> mergeIntervals(List<ImmutablePair<Double, Double>> ls) {
+    public static List<MutablePair<Double, Double>> mergeSUMOIntervals(List<ImmutablePair<Double, Double>> ls) {
         if (ls.size() <= 1) {
             var result = new ArrayList<MutablePair<Double, Double>>();
             result.add(new MutablePair<>(ls.get(0).getLeft(), ls.get(0).getRight()));
@@ -102,6 +102,37 @@ public class TimeTicker {
                     current.setValue(ls.get(i++).getRight());
                 }
                 results.add(current);
+            }
+            return results;
+        }
+    }
+
+    public static List<MutablePair<Double, Double>> mergeDfTIntervals(List<ImmutablePair<Double, Double>> ls) {
+        if (ls.isEmpty()) {
+            return new ArrayList<>();
+        } else if (ls.size() == 1) {
+            var result = new ArrayList<MutablePair<Double, Double>>();
+            var pair = ls.get(0);
+            if (pair != null) {
+                result.add(new MutablePair<>(pair.getLeft(), pair.getRight()));
+            }
+            return result;
+        } else {
+            List<MutablePair<Double, Double>> results = new ArrayList<>();
+            int i = 0;
+            while (i < ls.size()) {
+                var currentPair = ls.get(i);
+                if (currentPair != null) {
+                    var current = new MutablePair<>(currentPair.getLeft(), currentPair.getRight());
+                    i++;
+                    while ((i < ls.size()) && (ls.get(i) != null) && (ls.get(i).getLeft().equals(current.getRight()))) {
+                        current.setValue(ls.get(i).getRight());
+                        i++;
+                    }
+                    results.add(current);
+                } else {
+                    i++;
+                }
             }
             return results;
         }

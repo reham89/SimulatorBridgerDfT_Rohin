@@ -113,7 +113,7 @@ public class EdgeNetworksGenerator {
                         curr = next;
                     }
                 }
-                simulation_intervals.addAll(TimeTicker.mergeIntervals(ls));
+                simulation_intervals.addAll(TimeTicker.mergeDfTIntervals(ls));
                 ls.forEach(interval -> css_in_time.put(interval, x));
             });
 
@@ -131,10 +131,10 @@ public class EdgeNetworksGenerator {
 
                 ticks = new TreeSet<>(retrieved_basic_information.keySet());
             } else {
-                var rsuTimeData = context.select(field("simtime")).distinctOn(field("simtime")).from(Rsuinformation.RSUINFORMATION).fetch();
-                ticks = (TreeSet<Double>) new TreeSet<>(rsuTimeData.getValues(0));
+                var rsuTimeData = context.select(Rsuinformation.RSUINFORMATION.SIMTIME).distinctOn(Rsuinformation.RSUINFORMATION.SIMTIME).from(Rsuinformation.RSUINFORMATION).fetchInto(Rsuinformation.RSUINFORMATION);
+                ticks = new TreeSet<>(rsuTimeData.getValues(Rsuinformation.RSUINFORMATION.SIMTIME));
                 System.out.print("Fetching RSU data from SQL table...\n");
-                var allRSUData = context.select().from(Rsuinformation.RSUINFORMATION).where("simtime = 0.0").orderBy(field("simtime")).fetch();
+                var allRSUData = context.select().from(Rsuinformation.RSUINFORMATION).where("simtime = 0.0").orderBy(Rsuinformation.RSUINFORMATION.SIMTIME).fetch();
                 System.out.print("RSU data fetched\n");
                 System.out.print("Starting organisation of RSU data...\n");
                 int noRSU = Math.max(allRSUData.size()/ticks.size(),16);

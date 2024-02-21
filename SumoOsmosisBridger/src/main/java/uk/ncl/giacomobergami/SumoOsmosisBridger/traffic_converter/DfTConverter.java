@@ -27,6 +27,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.xpath.XPathExpressionException;
 import java.io.*;
+import java.sql.Time;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -58,6 +59,10 @@ public class DfTConverter extends TrafficConverter {
     List<Double> temporalOrdering;
     private static Logger logger = LogManager.getRootLogger();
     String path = "clean_example/3_extIOTSim_configuration/iot_generators.yaml";
+    CSVWriter writer = null;
+    static TreeSet<Double> wakeUpTimes = new TreeSet<>();
+    static HashMap<String, TimedIoT> FirstEntry = new HashMap<>();
+    static HashMap<String, TimedIoT> SecondEntry = new HashMap<>();
 
     transient final IoTEntityGenerator.IoTGlobalConfiguration conf = YAML.parse(IoTEntityGenerator.IoTGlobalConfiguration .class, new File(path)).orElseThrow();
 
@@ -118,8 +123,15 @@ public class DfTConverter extends TrafficConverter {
             var body = rows.subList(1, rows.size());
             body.sort(Comparator.comparing(f::apply));
 
-            for (int i = 0; i < body.size(); i++) {
-                String[] row = body.get(i);
+            try {
+                writer = new CSVWriter(new FileWriter(vehicleCSVFile));
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            String[] headers = {"id", "x", "y", "angle", "type", "speed", "pos", "lane", "slope", "simtime"};
+            writer.writeNext(headers);
+
+            for (String[] row : body) {
                 //   String curr = String.valueOf(row[dateColumnIndex]);
                 //  double currTime = Double.parseDouble(row[timeColumnIndex]); //
                 //double currTime = 1; // bec each row has 1 hour which is 3600 sec
@@ -135,14 +147,17 @@ public class DfTConverter extends TrafficConverter {
                 // dateTime = LocalDate.parse(dateString, dateFormatter).atStartOfDay();
                 int hour = Integer.parseInt(hourString);
                 dateTime = dateTime.withHour(hour); // add the time in "hour" to the date
-                double currTime =(dateTime.toEpochSecond(ZoneOffset.UTC) -earliestTime);
-
+                double currTime = (dateTime.toEpochSecond(ZoneOffset.UTC) - earliestTime);
+                wakeUpTimes.add(currTime);
                 temporalOrdering.add(currTime);
                 var ls = new ArrayList<TimedIoT>();
                 timedIoTDevices.put(currTime, ls);
+
+                //String[] data = {String.valueOf(vehicle.getId()), String.valueOf(vehicle.getX()), String.valueOf(vehicle.getY()), String.valueOf(vehicle.getAngle()), String.valueOf(vehicle.getType()), String.valueOf(vehicle.getSpeed()), String.valueOf(vehicle.getPos()), String.valueOf(vehicle.getLane()), String.valueOf(vehicle.getSlope()), String.valueOf(vehicle.getSimtime())};
+                //writer.writeNext(data);
                 int N = Integer.parseInt(row[VehColumnIndex]);
                 // generate ID for vehicles
-                for (int counter = 0; counter < N;) {
+                for (int counter = 0; counter < N; ) {
                     TimedIoT rec = new TimedIoT();
                     rec.id = "id_" + counter;
                     //rec.numberOfVeh = N; // need to check
@@ -151,9 +166,35 @@ public class DfTConverter extends TrafficConverter {
                     rec.lane = lane;
                     rec.simtime = currTime; //need to solve it!! let it i?
                     ls.add(rec);
+
+                    String[] data = {String.valueOf(rec.getId()), String.valueOf(rec.getX()), String.valueOf(rec.getY()), String.valueOf(rec.getAngle()), String.valueOf(rec.getType()), String.valueOf(rec.getSpeed()), String.valueOf(rec.getPos()), String.valueOf(rec.getLane()), String.valueOf(rec.getSlope()), String.valueOf(rec.getSimtime())};
+                    writer.writeNext(data);
                     counter++;
+                    if (SecondEntry.containsKey(rec.getId())) {
+                        continue;
+                    }
+                    if (FirstEntry.containsKey(rec.getId())) {
+                        SecondEntry.putIfAbsent(rec.getId(), rec);
+                        continue;
+                    }
+                    FirstEntry.putIfAbsent(rec.getId(), rec);
                 }
             }
+            try {
+                writer.flush();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            try {
+                writer.close();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+
+            List<IoTDeviceTabularConfiguration> IoTDevices = generateIoTDeviceConfigList(FirstEntry, SecondEntry);
+            SerializeIoTDeviceConfigList(IoTDevices);
+            SerializeWakeupTimes(wakeUpTimes);
+
             // 1. Extract all ID values
             Set<String> uniqueIds = new HashSet<>();
             for (int i = 1; i < body.size(); i++) {
@@ -368,6 +409,18 @@ public class DfTConverter extends TrafficConverter {
             return false;
         }
         return true;
+    }
+
+    public static TreeSet<Double> getWakeUpTimes() {
+        return wakeUpTimes;
+    }
+
+    public static HashMap<String, TimedIoT> getFirstEntry() {
+        return FirstEntry;
+    }
+
+    public static HashMap<String, TimedIoT> getSecondEntry() {
+        return SecondEntry;
     }
 
 }
