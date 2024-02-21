@@ -6,16 +6,14 @@ import uk.ncl.giacomobergami.utils.structures.ImmutablePair;
 import uk.ncl.giacomobergami.utils.structures.MutablePair;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 public class TimeTicker {
 
     private final double begin;
     private final double end;
     private final double step;
-    List<ImmutablePair<Double, Double>> traffic_simulation_ticks;
+    public static List<ImmutablePair<Double, Double>> traffic_simulation_ticks;
     private static final File converter_file = new File("clean_example/converter.yaml");
     protected static final Optional<TrafficConfiguration> time_conf = YAML.parse(TrafficConfiguration.class, converter_file);
 
@@ -31,11 +29,25 @@ public class TimeTicker {
         this.end = end;
         this.step = step;
         double current = this.begin;
-        while (current + step < end) {
+        /*TreeMap<Double, Set<Set<String>>> subnets_in_time;
+        subnets_in_time = gson.fromJson(reader1, sccType);
+        HashMap<Set<Set<String>>, TreeSet<Double>> elements = new HashMap<>();
+        subnets_in_time.forEach((x,y)-> elements.computeIfAbsent(y, sets -> new TreeSet<>()).add(x));
+        subnets_in_time.clear();*/
+        /*while (current + step < end) {
             current = (double) Math.round((current) * 1000) / 1000;
             double next = (double) Math.round((current + step) * 1000) / 1000;
             traffic_simulation_ticks.add(new ImmutablePair<>(current, next));
             current += step;
+        }*/
+    }
+
+    public static void addToTSTicks(Object[] tem) {
+        var temp = 5;
+        for(int i = 0; i < tem.length -1; i++) {
+            double current = (double) tem[i];
+            double next = (double) tem[i+1];
+            traffic_simulation_ticks.add(new ImmutablePair<>(current, next));
         }
     }
 
