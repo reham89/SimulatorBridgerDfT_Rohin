@@ -1,0 +1,26 @@
+*.zip
+.idea/
+.idea/*
+target/
+target/*
+stats/
+stats/*
+reham*
+*.csv
+# Default ignored files
+/shelf/
+/.idea
+/target
+# Datasource local storage ignored files
+/dataSources/
+/dataSources.local.xml
+# Editor-based HTTP Client requests
+/httpRequests/
+/IoTSim-Osmosis-RES.iml
+/.gradle/
+log.txt
+/clean_example/1_sumo_output/
+/clean_example/1_traffic_information_collector_output/
+/clean_example/2_central_agent_oracle_output/
+osmotic.log
+clean_example/sumo.yaml
