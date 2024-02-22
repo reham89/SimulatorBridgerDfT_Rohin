@@ -48,8 +48,8 @@ public class MainExample {
         Connection conn = ConnectToSource(dataSource);
         DSLContext context = getDSLContext(conn);
 
-        boolean generate = true;
-        boolean step1 = true;
+        boolean generate = false;
+        boolean step1 = false;
         boolean step2 = false;
         boolean step3 = true;
 

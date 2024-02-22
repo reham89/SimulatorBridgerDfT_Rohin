@@ -137,10 +137,13 @@ public class OsmoticBroker extends DatacenterBroker {
 	private double intervalStart = /*(int)*/ Math.floor(startTime);
 	private double intervalEnd = intervalStart + collectionInterval;
 	private transient Result<VehinformationRecord> dataRange = null;
+	private transient Result<VehinformationRecord> dataFutureRange = null;
+	private transient Result<VehinformationRecord> processTimes = null;
 	private transient ProgressBar pb = null;
 	private double lastTime = 0;
 	private final double[] notUpdated = new double[]{-1.0, -1.0};
 	private List<String> vehsToUpdate = null;
+	private List<Double> timesToProcess = null;
 	private final float maxEdgeBW = 100;
 	public transient Collection<Double> wakeUpTimes;
 
@@ -183,6 +186,8 @@ public class OsmoticBroker extends DatacenterBroker {
 		// Setting up the forced times when the simulator has to wake up, as new messages have to be sent
 		if (!isWakeupStartSet) {
 			wakeUpTimes = ioTEntityGenerator.collectionOfWakeUpTimes();
+			processTimes = context.select().distinctOn(Vehinformation.VEHINFORMATION.SIMTIME).from(Vehinformation.VEHINFORMATION).orderBy(Vehinformation.VEHINFORMATION.SIMTIME).fetchInto(Vehinformation.VEHINFORMATION);
+			timesToProcess = processTimes.getValues(Vehinformation.VEHINFORMATION.SIMTIME);
 			for (Double forcedWakeUpTime :
 					wakeUpTimes) {
 				double time = forcedWakeUpTime - chron;
@@ -191,6 +196,7 @@ public class OsmoticBroker extends DatacenterBroker {
 				}
 			}
 			isWakeupStartSet = true;
+			endTime = Collections.max(timesToProcess);
 		}
 
 		if (ev.getTag() == MAPE_WAKEUP_FOR_COMMUNICATION) {
@@ -201,54 +207,57 @@ public class OsmoticBroker extends DatacenterBroker {
 			var ab = AgentBroker.getInstance();
 			//info used to update IoT devices' positions
 			double now = (double) Math.round((chron / IoTEntityGenerator.lat) * IoTEntityGenerator.lat * 1000) / 1000;
-			double future = now + (2 * deltaVehUpdate);
+			int nowIndex = timesToProcess.indexOf(now);
+			double future = nowIndex == timesToProcess.size() - 1 ? now : timesToProcess.get(timesToProcess.indexOf(now) + 1);//now + (2 * deltaVehUpdate);
 			lastTime = now;
 
-			if (collectSQLInfo <= now) {
+			//if (collectSQLInfo <= now) {
 				//System.out.print("Collecting new batch of vehicle information from SQL table...\n");
 				//dataNowRange = context.select(Vehinformation.VEHINFORMATION.VEHICLE_ID, Vehinformation.VEHINFORMATION.X, Vehinformation.VEHINFORMATION.Y, Vehinformation.VEHINFORMATION.SIMTIME).from(Vehinformation.VEHINFORMATION).where("simtime BETWEEN '" + (double) intervalStart + "' AND '" + Math.min((double) intervalEnd, endSUMO) + "'").orderBy(field("simtime")).fetch();
 				//dataFutureRange = context.select(Vehinformation.VEHINFORMATION.VEHICLE_ID, Vehinformation.VEHINFORMATION.X, Vehinformation.VEHINFORMATION.Y, Vehinformation.VEHINFORMATION.SIMTIME).from(Vehinformation.VEHINFORMATION).where("simtime BETWEEN '" + ((double) intervalStart + (2 * deltaVehUpdate)) + "' AND '" + Math.min(((double) intervalEnd + (2 * deltaVehUpdate)), endSUMO) + "'").orderBy(field("simtime")).fetch();
-				dataRange = context.select(Vehinformation.VEHINFORMATION.VEHICLE_ID, Vehinformation.VEHINFORMATION.X, Vehinformation.VEHINFORMATION.Y, Vehinformation.VEHINFORMATION.SIMTIME).from(Vehinformation.VEHINFORMATION).where("simtime BETWEEN '" + (double) intervalStart + "' AND '" + Math.min(((double) intervalEnd + (2 * deltaVehUpdate)), endTime) + "'").orderBy(field("simtime")).fetchInto(Vehinformation.VEHINFORMATION);
+				dataRange = context.select(Vehinformation.VEHINFORMATION.VEHICLE_ID, Vehinformation.VEHINFORMATION.X, Vehinformation.VEHINFORMATION.Y, Vehinformation.VEHINFORMATION.SIMTIME).from(Vehinformation.VEHINFORMATION).where("simtime =" + now).orderBy(Vehinformation.VEHINFORMATION.SIMTIME).fetchInto(Vehinformation.VEHINFORMATION);
+				dataFutureRange = context.select(Vehinformation.VEHINFORMATION.VEHICLE_ID, Vehinformation.VEHINFORMATION.X, Vehinformation.VEHINFORMATION.Y, Vehinformation.VEHINFORMATION.SIMTIME).from(Vehinformation.VEHINFORMATION).where("simtime =" + future).orderBy(Vehinformation.VEHINFORMATION.SIMTIME).fetchInto(Vehinformation.VEHINFORMATION);
 				vehsToUpdate = dataRange.getValues(Vehinformation.VEHINFORMATION.VEHICLE_ID);
-				collectSQLInfo += collectionInterval;
-				intervalStart += collectionInterval;
-				intervalEnd += collectionInterval;
+				//collectSQLInfo += collectionInterval;
+				//intervalStart += collectionInterval;
+				//intervalEnd += collectionInterval;
 				//System.out.print("Batch collected from SQL table\n");
-			}
+			//}
 
-            var Times = dataRange.getValues(Vehinformation.VEHINFORMATION.SIMTIME);//dataRange.getValues(3);
-			//var nowTimes = Times; //dataNowRange.getValues(3);
-			HashMap<String, double[]> nowData = new HashMap<>();
-			var nowFirst = Times.indexOf(now);
-			var nowLast = Times.lastIndexOf(now);
-			if (nowFirst != -1) {
-				for (int i = nowFirst; i <= nowLast; i++) {
-					String name = dataRange.get(i).getValue(Vehinformation.VEHINFORMATION.VEHICLE_ID);
-					double[] nowPos = {dataRange.get(i).getValue(Vehinformation.VEHINFORMATION.X), dataRange.get(i).getValue(Vehinformation.VEHINFORMATION.Y)};
-					nowData.put(name, nowPos);
-				}
-				//var futureTimes = Times;//
-				HashMap<String, double[]> futureData = new HashMap<>();
-				var futureFirst = Times.indexOf(future);
-				var futureLast = Times.lastIndexOf(future);
-				for (int i = futureFirst; i < futureLast; i++) {
-					String name = dataRange.get(i).getValue(Vehinformation.VEHINFORMATION.VEHICLE_ID);
-					double[] futurePos = nowData.containsKey(name) ? new double[]{dataRange.get(i).getValue(Vehinformation.VEHINFORMATION.X), dataRange.get(i).getValue(Vehinformation.VEHINFORMATION.Y)} : notUpdated;
-					futureData.put(name, futurePos);
-				}
+			if(!dataRange.isEmpty()) {
+				var Times = dataRange.getValues(Vehinformation.VEHINFORMATION.SIMTIME);//dataRange.getValues(3);
+				//var nowTimes = Times; //dataNowRange.getValues(3);
+				HashMap<String, double[]> nowData = new HashMap<>();
+				var nowFirst = Times.indexOf(now);
+				var nowLast = Times.lastIndexOf(now);
+				if (nowFirst != -1) {
+					for (int i = nowFirst; i <= nowLast; i++) {
+						String name = dataRange.get(i).getValue(Vehinformation.VEHINFORMATION.VEHICLE_ID);
+						double[] nowPos = {dataRange.get(i).getValue(Vehinformation.VEHINFORMATION.X), dataRange.get(i).getValue(Vehinformation.VEHINFORMATION.Y)};
+						nowData.put(name, nowPos);
+					}
+					var futureTimes = dataFutureRange.getValues(Vehinformation.VEHINFORMATION.SIMTIME);
+					HashMap<String, double[]> futureData = new HashMap<>();
+					var futureFirst = futureTimes.indexOf(future);
+					var futureLast = futureTimes.lastIndexOf(future);
+					for (int i = futureFirst; i < futureLast; i++) {
+						String name = dataFutureRange.get(i).getValue(Vehinformation.VEHINFORMATION.VEHICLE_ID);
+						double[] futurePos = nowData.containsKey(name) ? new double[]{dataFutureRange.get(i).getValue(Vehinformation.VEHINFORMATION.X), dataFutureRange.get(i).getValue(Vehinformation.VEHINFORMATION.Y)} : notUpdated;
+						futureData.put(name, futurePos);
+					}
 
-				//var dataNow = context.select(field("vehicle_id"), field("x"), field("y")).from(Vehinformation.VEHINFORMATION).where("simtime = '" + now + "'").fetch();
-				//var dataFuture = context.select(field("vehicle_id"), field("x"), field("y")).from(Vehinformation.VEHINFORMATION).where("simtime = '" + future + "'").fetch();
+					//var dataNow = context.select(field("vehicle_id"), field("x"), field("y")).from(Vehinformation.VEHINFORMATION).where("simtime = '" + now + "'").fetch();
+					//var dataFuture = context.select(field("vehicle_id"), field("x"), field("y")).from(Vehinformation.VEHINFORMATION).where("simtime = '" + future + "'").fetch();
 
-				// Updates the IoT Device with the geo-location information
-				for (int i = 0; i < nowData.keySet().size(); i++) {
-					String id = (String) nowData.keySet().toArray()[i];
-					IoTDevice obj = iotDeviceNameToObject.get(id);
-					double[] nowDouble = nowData.get(id);
-					double[] futureDouble = futureData.getOrDefault(id, notUpdated);
-					ioTEntityGenerator.updateIoTDevice(obj, nowDouble, futureDouble);
+					// Updates the IoT Device with the geo-location information
+					for (int i = 0; i < nowData.keySet().size(); i++) {
+						String id = (String) nowData.keySet().toArray()[i];
+						IoTDevice obj = iotDeviceNameToObject.get(id);
+						double[] nowDouble = nowData.get(id);
+						double[] futureDouble = futureData.getOrDefault(id, notUpdated);
+						ioTEntityGenerator.updateIoTDevice(obj, nowDouble, futureDouble);
+					}
 				}
-			}
 
 			/*iotDeviceNameToObject.forEach((id, obj) -> {
 				double[] nowDouble = nowData.containsKey(id) ? nowData.get(id) : notUpdated;				//double[] nowDouble = dataNow.getValues(0).indexOf(id) == -1 ? new double[]{-1.0, -1.0} : new double[]{(double) dataNow.getValue(dataNow.getValues(0).indexOf(id), 1), (double) dataNow.getValue(dataNow.getValues(0).indexOf(id), 2)};
@@ -257,19 +266,20 @@ public class OsmoticBroker extends DatacenterBroker {
 				ioTEntityGenerator.updateIoTDevice(obj, nowDouble, futureDouble);
 			});*/
 
-			if (deltaVehUpdate == 0.001 && now >= 1.0) {
-				if (now % 1 == 0) {
-					if (pb != null) {
-						pb.stepTo(1000L);
+				if (deltaVehUpdate == 0.001 && now >= 1.0) {
+					if (now % 1 == 0) {
+						if (pb != null) {
+							pb.stepTo(1000L);
+						}
+						pb = new ProgressBar("Progress to second " + Math.ceil(now + 1) + " of simtime", 1000L);
 					}
-					pb = new ProgressBar("Progress to second " + Math.ceil(now + 1) + " of simtime", 1000L);
+					pb.step();
 				}
-				pb.step();
+				//Update simulation time in the AgentBroker
+				ab.updateTime(chron, vehsToUpdate);
+				//Execute MAPE loop at time interval
+				ab.executeMAPE(chron);
 			}
-			//Update simulation time in the AgentBroker
-			ab.updateTime(chron, vehsToUpdate);
-			//Execute MAPE loop at time interval
-			ab.executeMAPE(chron);
 		}
 
 		switch (ev.getTag()) {

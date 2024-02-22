@@ -457,10 +457,10 @@ public class IoTEntityGenerator implements Serializable{
 
     public Collection<Double> collectionOfWakeUpTimes() {
         System.out.print("Starting Collection of Wake Up Times...\n");
-        latency = Math.max(latency, 0.01);
+        /*latency = Math.max(latency, 0.01);
         for (double i = begin; i <= end; i = i + latency) {
             setWUT.add((double) Math.round(i * 1000) / 1000);
-        }
+        }*/
         setWUT.addAll(wakeupTimes);
         /*for (int j = 0; j < vehicleTimes.size(); j++) {
             setWUT.addAll((Collection<? extends Double>) vehicleTimes.values().toArray()[j]);
@@ -477,7 +477,6 @@ public class IoTEntityGenerator implements Serializable{
         toUpdateWithTime.mobility.location.y = currentPosition[1];
         toUpdateWithTime.mobility.range.endX = (int) expectedPosition[0];
         toUpdateWithTime.mobility.range.endY = (int) expectedPosition[1];
-
     }
 
     /*public void updateIoTDevice(@Input @Output IoTDevice toUpdateWithTime,
