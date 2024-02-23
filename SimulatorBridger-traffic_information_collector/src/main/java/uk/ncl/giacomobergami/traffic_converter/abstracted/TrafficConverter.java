@@ -83,9 +83,9 @@ public abstract class TrafficConverter {
         System.out.print("Starting collection and upload of traffic information to SQL database...\n");
         for (Double tick : timeUnits) {
             // Writing IoT Devices
-            /*if(conf.isOutputVehicleCsvFile()) {
-                getTimedIoT(tick).forEach(this::writeTimedIoT);
-            }*/
+//            if(conf.isOutputVehicleCsvFile()) {
+//                getTimedIoT(tick).forEach(this::writeTimedIoT);
+//            }
             // Getting all of the IoT Devices
             HashSet<TimedEdge> allEdgeNodes = getTimedEdgeNodes(tick);
             allEdgeNodes.forEach(x -> {
@@ -117,7 +117,7 @@ public abstract class TrafficConverter {
             e.printStackTrace();
             return false;
         }
-        //closeWritingTimedIoT();
+        closeWritingTimedIoT();
         closeWritingTimedEdge();
         logger.trace("Transferring results to SQL Database...");
         write_to_SQL(conn, context,  true, true, sccPerTimeComponent, true, delta_network_neighbours, true);

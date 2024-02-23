@@ -128,7 +128,7 @@ public class DfTConverter extends TrafficConverter {
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-            String[] headers = {"id", "x", "y", "angle", "type", "speed", "pos", "lane", "slope", "simtime"};
+            String[] headers = {"vehicle_ID", "x", "y", "angle", "type", "speed", "pos", "lane", "slope", "simtime"};
             writer.writeNext(headers);
 
             for (String[] row : body) {
