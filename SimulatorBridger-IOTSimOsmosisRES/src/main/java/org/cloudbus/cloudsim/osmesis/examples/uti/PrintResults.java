@@ -192,11 +192,11 @@ public class PrintResults {
 		System.out.print("Organising osmoticAppsStats Data...\n");
 		long startTime = System.nanoTime();
 		copyCSVDATA(conn, OASCSV, targetTABLE);
-		transferDATABetweenTables(conn, "osmoticAppsStats(appid,appname,cloudletmisize,cloudletproccessingtimebyvm" +
-						",datasizeiotdevicetomel_mb,datasizemeltovm_mb,destinationvmname,edgeletmisize,edgeletproccessingtimebymel" +
+		transferDATABetweenTables(conn, "osmoticAppsStats(appid,appname,cloudletmisize,cloudletprocessingtimebyvm" +
+						",datasizeiotdevicetomel_mb,datasizemeltovm_mb,destinationvmname,edgeletmisize,edgeletprocessingtimebymel" +
 						",edgelet_mel_finishtime,edgelet_mel_starttime,finishtime,iotdevicename,melname,melendtransmissiontime,melstarttransmissiontime,starttime," +
 						"oas_transaction,transactiontotaltime,transmissiontimeiotdevicetomel,transmissiontimemeltovm,flowiotmelappid,flowmelcloudappid,path_dst,path_src,edgetowanbw)",
-				"appid,appname,cloudletmisize,cloudletproccessingtimebyvm,datasizeiotdevicetomel_mb,datasizemeltovm_mb,destinationvmname,edgeletmisize,edgeletproccessingtimebymel,edgelet_mel_finishtime,edgelet_mel_starttime,finishtime,iotdevicename,melname,melendtransmissiontime,melstarttransmissiontime,starttime,oas_transaction,transactiontotaltime,transmissiontimeiotdevicetomel,transmissiontimemeltovm,flowiotmelappid,flowmelcloudappid,path_dst,path_src,edgetowanbw"
+				"appid,appname,cloudletmisize,cloudletprocessingtimebyvm,datasizeiotdevicetomel_mb,datasizemeltovm_mb,destinationvmname,edgeletmisize,edgeletprocessingtimebymel,edgelet_mel_finishtime,edgelet_mel_starttime,finishtime,iotdevicename,melname,melendtransmissiontime,melstarttransmissiontime,starttime,oas_transaction,transactiontotaltime,transmissiontimeiotdevicetomel,transmissiontimemeltovm,flowiotmelappid,flowmelcloudappid,path_dst,path_src,edgetowanbw"
 				,targetTABLE);
 		long endTime = System.nanoTime();
 		long executionTime = (endTime - startTime) / 1000000;
@@ -214,8 +214,8 @@ public class PrintResults {
 		long startTime = System.nanoTime();
 		copyCSVDATA(conn, OARCSV, targetTABLE);
 		transferDATABetweenTables(conn, "overallAppResults(appname,endtime,iotdevicebatteryconsumption," +
-						"iotdevicedrained,simluationtime,starttime,totalcloudletsizes,totaledgeletsizes,totaliotgenerateddata,totalmelgenerateddata,apptotalrunningtime)",
-				"appname,endtime,iotdevicebatteryconsumption,iotdevicedrained,simluationtime,starttime,totalcloudletsizes,totaledgeletsizes,totaliotgenerateddata,totalmelgenerateddata,apptotalrunningtime"
+						"iotdevicedrained,simulationtime,starttime,totalcloudletsizes,totaledgeletsizes,totaliotgenerateddata,totalmelgenerateddata,apptotalrunningtime)",
+				"appname,endtime,iotdevicebatteryconsumption,iotdevicedrained,simulationtime,starttime,totalcloudletsizes,totaledgeletsizes,totaliotgenerateddata,totalmelgenerateddata,apptotalrunningtime"
 				,targetTABLE);
 		long endTime = System.nanoTime();
 		long executionTime = (endTime - startTime) / 1000000;
@@ -508,7 +508,7 @@ public class PrintResults {
 		public long TotalCloudLetSizes;
 		public double StartTime;
 		public double EndTime;
-		public double SimluationTime;
+		public double SimulationTime;
 		public double appTotalRunningTime;
 	}
 
@@ -530,7 +530,7 @@ public class PrintResults {
 		var tmp = tags.get(tags.size()-1).getCloudLet();
 		if (tmp == null) return;
 		double EndTime = tmp.getFinishTime();
-		double SimluationTime = EndTime - StartTime;
+		double SimulationTime = EndTime - StartTime;
 		
 		WorkflowInfo firstWorkflow = tags.get(0);
 		WorkflowInfo secondWorkflow = tags.size() > 1 ? tags.get(1) : null;
@@ -562,7 +562,7 @@ public class PrintResults {
 		fromTag.TotalCloudLetSizes = TotalCloudLetSizes;
 		fromTag.StartTime = StartTime;
 		fromTag.EndTime = EndTime;
-		fromTag.SimluationTime = SimluationTime;
+		fromTag.SimulationTime = SimulationTime;
 		fromTag.appTotalRunningTime = appTotalRunningTmie;
 		list.add(fromTag);
 	}
@@ -580,12 +580,12 @@ public class PrintResults {
 		public double EdgeLetMISize;
 		public double EdgeLet_MEL_StartTime;
 		public double EdgeLet_MEL_FinishTime;
-		public double EdgeLetProccessingTimeByMEL;
+		public double EdgeLetProcessingTimeByMEL;
 		public String DestinationVmName;
 		public long DataSizeMELToVM_Mb;
 		public double TransmissionTimeMELToVM;
 		public double CloudLetMISize;
-		public double CloudLetProccessingTimeByVM;
+		public double CloudLetProcessingTimeByVM;
 		public double TransactionTotalTime;
 		public String path_src, path_dst;
 		public double MelStartTransmissionTime;
@@ -631,7 +631,7 @@ public class PrintResults {
 				fromTag.EdgeLetMISize = workflowTag.getEdgeLet().getCloudletLength();
 				fromTag.EdgeLet_MEL_StartTime = workflowTag.getEdgeLet().getExecStartTime();
 				fromTag.EdgeLet_MEL_FinishTime = workflowTag.getEdgeLet().getFinishTime();
-				fromTag.EdgeLetProccessingTimeByMEL = workflowTag.getEdgeLet().getActualCPUTime();
+				fromTag.EdgeLetProcessingTimeByMEL = workflowTag.getEdgeLet().getActualCPUTime();
 				fromTag.DestinationVmName = workflowTag.getEdgeToCloudFlow().getAppNameDest() + " (" + workflowTag.getDestinationDCName() + ")";
 				var dstHost = MELResolverToHostingHost.resolveHostFromMELId(workflowTag.getEdgeToCloudFlow().getAppNameDest());
 				fromTag.path_dst = "Host#" + dstHost.getId() + "@" + workflowTag.getDestinationDCName();
@@ -642,7 +642,7 @@ public class PrintResults {
 				fromTag.TransmissionTimeMELToVM = workflowTag.getEdgeToCloudFlow().getTransmissionTime();
 				fromTag.MelEndTransmissionTime = fromTag.TransmissionTimeMELToVM + fromTag.MelStartTransmissionTime;
 				fromTag.CloudLetMISize = workflowTag.getCloudLet().getCloudletLength();
-				fromTag.CloudLetProccessingTimeByVM = workflowTag.getCloudLet().getActualCPUTime();
+				fromTag.CloudLetProcessingTimeByVM = workflowTag.getCloudLet().getActualCPUTime();
 				fromTag.TransactionTotalTime = workflowTag.getIotDeviceFlow().getTransmissionTime() + workflowTag.getEdgeLet().getActualCPUTime()
 						+ workflowTag.getEdgeToCloudFlow().getTransmissionTime() + workflowTag.getCloudLet().getActualCPUTime();
 				list.add(fromTag);
