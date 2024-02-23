@@ -197,11 +197,11 @@ public class DfTConverter extends TrafficConverter {
 
             // 1. Extract all ID values
             Set<String> uniqueIds = new HashSet<>();
-            for (int i = 1; i < body.size(); i++) {
+            for (int i = 0; i < body.size(); i++) {
                 uniqueIds.add(body.get(i)[idColumnIndex]);
             }
             List<String> allIds = new ArrayList<>();
-            for (int i = 1; i < body.size(); i++) {
+            for (int i = 0; i < body.size(); i++) {
                 allIds.add(body.get(i)[idColumnIndex]);
             }
             // 2. Filter out duplicates
@@ -210,7 +210,7 @@ public class DfTConverter extends TrafficConverter {
             for (String id : traffic_lights) {
                 for (int i = 0; i < body.size(); i++) {
                     if (body.get(i)[idColumnIndex].equals(id)) {
-                        var curr = rows.get(i);
+                        var curr = rows.get(i + 1);
                         var rsu = new TimedEdge(
                                 String.valueOf(curr[idColumnIndex]),
                                 Double.parseDouble(curr[eastColumnIndex]),
