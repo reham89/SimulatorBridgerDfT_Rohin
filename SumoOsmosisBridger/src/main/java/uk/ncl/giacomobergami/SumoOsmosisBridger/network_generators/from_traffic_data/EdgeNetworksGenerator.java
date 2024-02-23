@@ -136,17 +136,17 @@ public class EdgeNetworksGenerator {
                 var rsuTimeData = context.select(Rsuinformation.RSUINFORMATION.SIMTIME).distinctOn(Rsuinformation.RSUINFORMATION.SIMTIME).from(Rsuinformation.RSUINFORMATION).fetchInto(Rsuinformation.RSUINFORMATION);
                 ticks = new TreeSet<>(rsuTimeData.getValues(Rsuinformation.RSUINFORMATION.SIMTIME));
                 System.out.print("Fetching RSU data from SQL table...\n");
-                var allRSUData = context.select().from(Rsuinformation.RSUINFORMATION).where("simtime = 0.0").orderBy(Rsuinformation.RSUINFORMATION.SIMTIME).fetch();
+                var allRSUData = context.select().from(Rsuinformation.RSUINFORMATION).where().orderBy(Rsuinformation.RSUINFORMATION.SIMTIME).fetch();
                 System.out.print("RSU data fetched\n");
                 System.out.print("Starting organisation of RSU data...\n");
-                int noRSU = Math.max(allRSUData.size()/ticks.size(),allRSUData.size());
+                int noRSU = Math.max(allRSUData.size()/ticks.size(),ticks.size());
                 int iterateSize = movingEdges ? ticks.size() : 1;
                 for(int j = 0; j < iterateSize; j++) {
                     HashMap<String, TimedEdge> rbi_entry = new HashMap<>();
                     RsuinformationRecord entry;
                     double currentTime = 0.0;
                     for (int i = 0; i < noRSU; i++) {
-                        long k = (j * noRSU) + i;
+                        long k = ((long) j * noRSU) + i;
                         entry = ((RsuinformationRecord) allRSUData.toArray()[(int) k]);
                         TimedEdge currentRSUInfo = new TimedEdge(entry.getRsuId(), entry.getX(), entry.getY(), entry.getCommunicationRadius(), entry.getMaxVehicleCommunication(), entry.getSimtime());
                         rbi_entry.put(entry.getRsuId(), currentRSUInfo);
