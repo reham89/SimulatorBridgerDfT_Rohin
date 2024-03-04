@@ -36,6 +36,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import com.opencsv.*;
@@ -86,6 +87,9 @@ public class DfTConverter extends TrafficConverter {
                 concreteConf.default_max_vehicle_communication);
         connectionPath = new StraightforwardAdjacencyList<>();
     }
+
+    AtomicInteger in = new AtomicInteger(0);
+    TreeMap<ImmutablePair<Integer,Integer>, Integer> deviceMapping = new TreeMap<>();
 
     @Override
     protected boolean initReadSimulatorOutput() {
@@ -159,7 +163,11 @@ public class DfTConverter extends TrafficConverter {
                 // generate ID for vehicles
                 for (int counter = 0; counter < N; ) {
                     TimedIoT rec = new TimedIoT();
-                    rec.id = "id_" + counter;
+                    ImmutablePair<Integer, Integer> cp = new ImmutablePair<>(counter, Integer.valueOf(row[idColumnIndex]));
+                    if (!deviceMapping.containsKey(cp)) {
+                        deviceMapping.put(cp, deviceMapping.size());
+                    }
+                    rec.id = "id_" + counter; //deviceMapping.get(cp);
                     //rec.numberOfVeh = N; // need to check
                     rec.x = x;
                     rec.y = y;
@@ -391,6 +399,7 @@ public class DfTConverter extends TrafficConverter {
             }
 
             earliestTime = earliestDateTime.toEpochSecond(ZoneOffset.UTC);
+            earliestTime-=3;
             long latestTime = latestDateTime.toEpochSecond(ZoneOffset.UTC);
 
             // Adjust configuration based on the calculated times

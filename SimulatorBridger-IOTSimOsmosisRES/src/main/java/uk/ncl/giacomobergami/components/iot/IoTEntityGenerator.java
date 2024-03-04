@@ -1,6 +1,7 @@
 package uk.ncl.giacomobergami.components.iot;
 
 import me.tongfei.progressbar.ProgressBar;
+import org.cloudbus.cloudsim.edge.core.edge.Mobility;
 import org.jooq.DSLContext;
 import uk.ncl.giacomobergami.utils.annotations.Input;
 import uk.ncl.giacomobergami.utils.annotations.Output;
@@ -484,7 +485,10 @@ public class IoTEntityGenerator implements Serializable{
             toUpdateWithTime.mobility.range.endX = (int) expectedPosition[0];
             toUpdateWithTime.mobility.range.endY = (int) expectedPosition[1];
         } else {
-            toUpdateWithTime.transmit = false;
+            toUpdateWithTime.transmit = true;
+            toUpdateWithTime.mobility.range = new Mobility.MovingRange((int)currentPosition[0], (int)currentPosition[1], -1, -1);
+            toUpdateWithTime.mobility.location.x = currentPosition[0];
+            toUpdateWithTime.mobility.location.y = currentPosition[1];
         }
     }
     /*public void updateIoTDevice(@Input @Output IoTDevice toUpdateWithTime,
